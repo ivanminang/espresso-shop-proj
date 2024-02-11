@@ -1,0 +1,174 @@
+---
+# Source: shop-web/templates/serviceaccount.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: release-name-shop-web
+  labels:
+    proj: espresso-shop
+    app: s7ivan-espresso-web
+    helm.sh/chart: shop-web-0.1.0
+    app: s7ivan-espresso-web
+    version: v1
+    app.kubernetes.io/name: shop-web
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/version: "1.16.0"
+    app.kubernetes.io/managed-by: Helm
+automountServiceAccountToken: true
+---
+# Source: shop-web/templates/secret.yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: espresso-web-secret 
+  # namespace: s7ivan , I am not creating this namespace becaise helm will create one forme 
+  labels:
+    app: s7ivan-espresso-web
+
+type: Opaque
+data:
+  password: ZGV2b3BzZWFzeWxlYXJuaW5nOmRja3JfcGF0X2VfbjIxNF9BNl9mWDFwOHE5bk5GbXNJUWt2QQ==
+
+# data:
+#   .dockerconfigjson: ZGV2b3BzZWFzeWxlYXJuaW5nOmRja3JfcGF0X2VfbjIxNF9BNl9mWDFwOHE5bk5GbXNJUWt2QQ==
+# type:
+---
+# Source: shop-web/templates/configmap.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: espresso-web-cm
+  # labels:
+  #   app: s7ivan-espresso-web 
+data:
+    ProductCatalogUrl: "http://espresso-shop-product-catalog-svc:8091"
+    ReviewsUrl: "http://espresso-shop-reviews-svc:8092"
+---
+# Source: shop-web/templates/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: release-name-shop-web
+  labels:
+    proj: espresso-shop
+    app: s7ivan-espresso-web
+    helm.sh/chart: shop-web-0.1.0
+    app: s7ivan-espresso-web
+    version: v1
+    app.kubernetes.io/name: shop-web
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/version: "1.16.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  type: NodePort
+  ports:
+    - port: 8090
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    app: s7ivan-espresso-web
+    version: v1
+    app.kubernetes.io/name: shop-web
+    app.kubernetes.io/instance: release-name
+---
+# Source: shop-web/templates/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: release-name-shop-web
+  labels:
+    proj: espresso-shop
+    app: s7ivan-espresso-web
+    helm.sh/chart: shop-web-0.1.0
+    app: s7ivan-espresso-web
+    version: v1
+    app.kubernetes.io/name: shop-web
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/version: "1.16.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  selector:
+    matchLabels:
+      app: s7ivan-espresso-web
+      version: v1
+      app.kubernetes.io/name: shop-web
+      app.kubernetes.io/instance: release-name
+  template:
+    metadata:
+      labels:
+        proj: espresso-shop
+        app: s7ivan-espresso-web
+        helm.sh/chart: shop-web-0.1.0
+        app: s7ivan-espresso-web
+        version: v1
+        app.kubernetes.io/name: shop-web
+        app.kubernetes.io/instance: release-name
+        app.kubernetes.io/version: "1.16.0"
+        app.kubernetes.io/managed-by: Helm
+    spec:
+      imagePullSecrets:
+        name: regcred
+      serviceAccountName: release-name-shop-web
+      securityContext:
+        {}
+      containers:
+        - name: shop-web
+          securityContext:
+            {}
+          image: "devopseasylearning/s7ivan-espresso-web:v1.0.0"
+          imagePullPolicy: Always
+          envFrom:
+          - secretRef:
+               name: espresso-web-secret
+          - configMapRef:
+               name: espresso-web-cm
+          ports:
+            - name: http
+              containerPort: 80
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+          resources:
+            limits:
+              cpu: 100m
+              memory: 128Mi
+            requests:
+              cpu: 100m
+              memory: 128Mi
+---
+# Source: shop-web/templates/hpa.yaml
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: release-name-shop-web
+  labels:
+    proj: espresso-shop
+    app: s7ivan-espresso-web
+    helm.sh/chart: shop-web-0.1.0
+    app: s7ivan-espresso-web
+    version: v1
+    app.kubernetes.io/name: shop-web
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/version: "1.16.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: release-name-shop-web
+  minReplicas: 1
+  maxReplicas: 100
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 80

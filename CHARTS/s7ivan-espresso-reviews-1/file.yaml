@@ -1,0 +1,134 @@
+---
+# Source: shop-reviews-1/templates/serviceaccount.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: release-name-shop-reviews-1
+  labels:
+    proj: espresso-shop
+    app: s7ivan-espresso-reviews-1
+    helm.sh/chart: shop-reviews-1-0.1.0
+    app: s7ivan-espresso-reviews-1
+    app.kubernetes.io/name: shop-reviews-1
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/version: "1.16.0"
+    app.kubernetes.io/managed-by: Helm
+automountServiceAccountToken: true
+---
+# Source: shop-reviews-1/templates/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: release-name-shop-reviews-1
+  labels:
+    proj: espresso-shop
+    app: s7ivan-espresso-reviews-1
+    helm.sh/chart: shop-reviews-1-0.1.0
+    app: s7ivan-espresso-reviews-1
+    app.kubernetes.io/name: shop-reviews-1
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/version: "1.16.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  type: ClusterIP
+  ports:
+    - port: 8092
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    app: s7ivan-espresso-reviews-1
+    app.kubernetes.io/name: shop-reviews-1
+    app.kubernetes.io/instance: release-name
+---
+# Source: shop-reviews-1/templates/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: release-name-shop-reviews-1
+  labels:
+    proj: espresso-shop
+    app: s7ivan-espresso-reviews-1
+    helm.sh/chart: shop-reviews-1-0.1.0
+    app: s7ivan-espresso-reviews-1
+    app.kubernetes.io/name: shop-reviews-1
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/version: "1.16.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  selector:
+    matchLabels:
+      app: s7ivan-espresso-reviews-1
+      app.kubernetes.io/name: shop-reviews-1
+      app.kubernetes.io/instance: release-name
+  template:
+    metadata:
+      labels:
+        proj: espresso-shop
+        app: s7ivan-espresso-reviews-1
+        helm.sh/chart: shop-reviews-1-0.1.0
+        app: s7ivan-espresso-reviews-1
+        app.kubernetes.io/name: shop-reviews-1
+        app.kubernetes.io/instance: release-name
+        app.kubernetes.io/version: "1.16.0"
+        app.kubernetes.io/managed-by: Helm
+    spec:
+      imagePullSecrets:
+        name: regcred
+      serviceAccountName: release-name-shop-reviews-1
+      securityContext:
+        {}
+      containers:
+        - name: shop-reviews-1
+          securityContext:
+            {}
+          image: "devopseasylearning/s7ivan-espresso-reviews:v1.0.0"
+          imagePullPolicy: Always
+          ports:
+            - name: http
+              containerPort: 
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+          resources:
+            limits:
+              cpu: 100m
+              memory: 128Mi
+            requests:
+              cpu: 100m
+              memory: 128Mi
+---
+# Source: shop-reviews-1/templates/hpa.yaml
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: release-name-shop-reviews-1
+  labels:
+    proj: espresso-shop
+    app: s7ivan-espresso-reviews-1
+    helm.sh/chart: shop-reviews-1-0.1.0
+    app: s7ivan-espresso-reviews-1
+    app.kubernetes.io/name: shop-reviews-1
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/version: "1.16.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: release-name-shop-reviews-1
+  minReplicas: 1
+  maxReplicas: 100
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 80
